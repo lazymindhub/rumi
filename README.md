@@ -1,1 +1,1 @@
-# Инфобот lazymind "rumi"
+# Инфобот lazymind "rumi".
