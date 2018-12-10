@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Привет, Руми!</title>   
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <style>
+      html, body{
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	text-align: center;
+	font-family: helvetica, arial;
+	font-size: 16px;
+	background-color: black;
+      }
+      .blocker{
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: -webkit-flex;
+	display: flex;
+	-webkit-align-items: center;
+	align-items: center;
+	background-color: rgb(255, 250, 250);
+	z-index: 1000;
+      }
+      .blocker p {
+	width: 100%;
+	color: red;
+	font-size: 250%;
+      }
+      #noVideo p {
+	color: rgb(112, 128, 144);
+      }
+      .center {
+	display: -webkit-flex;
+	display: flex;
+	-webkit-justify-content: center;
+	justify-content: center;
+	-webkit-align-items: center;
+	align-items: center;
+	width: 100%;
+	height: 100%;
+      }
+      .tvset {
+	position: relative;
+	overflow: hidden;
+      }
+      video {
+	width: 100%;
+	height: 100%;
+      }
+      #panel {
+	position: absolute;
+	top: 0;
+	right: -50%;
+	width: 50%;
+	height: 100%;
+	background-color: rgba(68, 68, 102, 0.8);
+	color: rgb(204, 221, 238);
+      }
+      #panel p {
+	height: 40%;
+	padding: 0 0.5em;
+	}
+      a {
+	color: rgb(255, 238, 221);
+      }
+      @media all and (max-aspect-ratio:16/9), all and (aspect-ratio:16/9) {
+	.tvset {
+	  width: 100vw;
+	  height: 56.25vw;
+	}
+	#panel p {
+	  font-size: 4vw;
+	}
+	button {
+	  font-size: 2vw;
+	}
+      }
+      @media all and (min-aspect-ratio:16/9) {
+	.tvset {
+	  width: 177.77vh;
+	  height: 100vh;
+	}
+	#panel p {
+	  font-size: 7.2vh;
+	}
+	button {
+	  font-size: 3.6vh;
+	}
+      }
+      button {
+	border: none;
+	color: white;
+	padding: 0.5em 1em;
+	text-align: left;
+	text-decoration: none;
+	cursor: pointer;
+	display: block;
+	visibility: hidden;
+	width: 100%;
+	margin-bottom: 0.5em;
+	background-color: rgba(153, 170, 187, 0.5);
+      }
+      button:hover {
+	background-color: rgba(153, 170, 187, 0.8);
+	
+      }
+      .open {
+	transition: right 0.8s;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='center'>
+      <div class='tvset'>
+	<video id='myVideo'>
+	  <source src='video.mp4' type='video/mp4'>
+	  <source src='video.ogg' type='video/ogg'>
+	  <div class='blocker'><p>YYour browser does not support the video tag</p></div>
+	</video>
+	<div id='panel' ontransitionend = 'openPanel()'>
+	  <p id='txtQuestion'></p>
+	  <button></button>
+	  <button></button>
+	  <button></button>
+	  <button></button>
+	</div>
+      </div>
+    </div>
+    <audio id='myAudio'>
+      <source src='sound.ogg' type='audio/ogg'>
+      <source src='sound.mp3' type='audio/mpeg'>
+    </audio>
+    <div class='blocker' id='noVideo'><p>Loading...</p></div>
+    <div class='blocker' id='noJS'><p>Your browser does not support JavaScript</p></div>
+    <script>
+      var runVideo = 0;
+      var runSafe = false;
+      var logVideo = false;
+      var endVideo = 11.7;
+      var videoTimer;
+      var timeVideo = [[0,11.7],[11.7,46.55],[46.75,75.3],[75.5,82.06],[82.26,135.9],[136,158.01],[158.21,192.3],[192.5,222.35],[222.55,269.7],[269.9,299.6],[299.8,339.4],[339.6,355.8]];
+      var msgData = ['С чего начнём?',
+		     'Можешь ли ты точно сказать, ЧТО ты предлагаешь своим потребителям?',
+		     'Теперь ты можешь точно сказать, что ты предлагаешь своим потребителям?',
+		     '<a href="https://vk.com/banalistik" target="_blank">Нажми сюда, чтобы связаться с нами</a> или напиши нам e-mail на адрес banalistik@gmail.com ',
+		     'Ты можешь конкретно описать своего потенциального потребителя?',
+		     'Ты точно справился с формулировкой продукта?',
+		     'Теперь ты можешь конкретно описать своего потенциального потребителя?',
+		     'Ты уже выбрал, где тебе стоит продвигать свой проект?',
+		     'Теперь ты определился с соцсетями, которые будешь использовать?',
+		     'Получилось ли у тебя оценить работу конкурентов?',
+		     'Теперь тебе удалось познакомиться с конкурентами?',
+		     'А теперь стоит перейти к практике'];
+      var btnData = [[['1. Что продать','playVideo(2)'],['2. Кому продать', 'playVideo(5)'],['3. Где продать', 'playVideo(8)'],['4. Используй конкурентов', 'playVideo(10)']],
+		     [['1. Хочу подробнее','playVideo(3)'],['2. Да, всё понятно', 'playVideo(5)'],['3. Руми, повтори', 'playVideo(2)']],
+		     [['1. Да, всё понятно','playVideo(5)'],['2. Мне нужна помощь', 'playVideo(4)'],['3. Руми, повтори', 'playVideo(3)']],
+		     [['Руми, давай начнём с начала','playVideo(1)']],
+		     [['1. Мои потребители - все вокруг','playVideo(6)'],['2. Хочу подробнее', 'playVideo(7)'],['3. Представляю его в деталях', 'playVideo(8)'],['4. Руми, повтори', 'playVideo(5)']],
+		     [['1. Я сомневаюсь','playVideo(3)'],['2. Да, всё понятно', 'playVideo(7)'],['3. Руми, повтори', 'playVideo(6)']],
+		     [['1. Да, всё понятно','playVideo(8)'],['2. Мне нужна помощь', 'playVideo(4)'],['3. Руми, повтори', 'playVideo(7)']],
+		     [['1. Хочу подробнее','playVideo(9)'],['2. Да, уже знаю', 'playVideo(10)'],['3. Руми, повтори', 'playVideo(8)']],
+		     [['1. Да, теперь знаю','playVideo(10)'],['2. Мне нужна помощь', 'playVideo(4)'],['3. Руми, повтори', 'playVideo(9)']],
+		     [['1. Не знаю, как их найти','playVideo(11)'],['2. Я хочу большего', 'playVideo(12)'],['3. Руми, повтори', 'playVideo(10)']],
+		     [['1. Да, но я хочу большего','playVideo(12)'],['2. Мне нужна помощь', 'playVideo(4)'],['3. Руми, повтори', 'playVideo(11)']],
+		     [['1. Мне нужна помощь','playVideo(4)'],['2. Руми, давай начнём с начала', 'playVideo(1)']]];
+      document.getElementById('noJS').style.display = 'none';
+      document.getElementById('myAudio').load();
+      document.getElementById('myAudio').volume = 0.05;
+      document.getElementById('myAudio').playbackRate = 1.0;
+      document.getElementById('myVideo').load();
+      document.getElementById('myVideo').volume = 0.75;
+      document.getElementById('myVideo').playbackRate = 1.0;
+      var loadTimer = setInterval(loadVideo, 100);
+      function loadVideo() {
+	var a = document.getElementById('myAudio').readyState;
+	var v = document.getElementById('myVideo').readyState;
+	if (a > 3 && v > 3) {
+	  window.clearInterval(loadTimer);
+	  document.getElementById('noVideo').style.display = 'none';
+	  document.getElementById('myAudio').loop = true;
+	  document.getElementById('myAudio').play();
+	  startVideo();
+	}
+      }
+      function playVideo(i) {
+	if (runSafe) return;
+	runVideo = i-1;
+	logVideo = true;
+	document.getElementById('panel').classList.add('open');
+	document.getElementById('panel').style.right = '-50%';
+      }
+      function startVideo() {
+	runSafe = true;
+	document.getElementById('myVideo').currentTime=timeVideo[runVideo][0];
+	document.getElementById('myVideo').play();
+	endVideo = timeVideo[runVideo][1];
+	videoTimer = setInterval(testVideo, 1);
+      }
+      function testVideo(){
+	var t = document.getElementById('myVideo').currentTime;
+	if (t >= endVideo) {
+	  window.clearInterval(videoTimer);
+	  stopVideo();
+	}
+      }
+      function stopVideo() {
+	document.getElementById('myVideo').pause();
+	document.getElementById('txtQuestion').innerHTML = msgData[runVideo];
+	for (i=0; i<4; i++){
+	  document.getElementsByTagName('BUTTON')[i].style.visibility = 'hidden';
+	}
+	var l = btnData[runVideo].length;
+	for (i=0; i<l; i++){
+	  document.getElementsByTagName('BUTTON')[i].style.visibility = 'visible';
+	  document.getElementsByTagName('BUTTON')[i].textContent = btnData[runVideo][i][0];
+	  document.getElementsByTagName('BUTTON')[i].onclick = new Function(btnData[runVideo][i][1]);
+	}
+	logVideo = false;
+	document.getElementById('panel').classList.add('open');
+	document.getElementById('panel').style.right = 0;
+      }
+      function openPanel() {
+	runSafe = false;
+	document.getElementById('panel').classList.remove('open');
+	if (logVideo) {
+	  startVideo();
+	} else {
+	  document.getElementsByTagName('BUTTON')[0].focus();
+	}
+      }
+    </script>
+  </body>
+</html>
