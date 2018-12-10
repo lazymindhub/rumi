@@ -1,1 +1,1 @@
-# rumi
+# Инфобот lazymind "rumi"
